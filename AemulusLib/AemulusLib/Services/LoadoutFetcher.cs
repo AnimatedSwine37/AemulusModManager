@@ -15,70 +15,35 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using JsonSerializer = System.Text.Json.JsonSerializer;
-using DynamicData;
 
 namespace AemulusEx.Services
 {
-    public class LoadoutFetcher
+    public static class LoadoutFetcher
     {
-        public string LoadoutsFolder { get; }
-        private PackageFetcher packageFetcher { get; }
-        /// <summary>
-        /// An <see cref="ObservableCollection{Loadout}"/> of <see cref="Loadout"/>s that automatically populates any changes to contained Loadouts into the Loadout.xml file
-        /// and automatically adds any newly detected legacy loadouts in the Config folder
-        /// </summary>
-        public SourceList<Loadout> Loadouts { get; }
-
-        public LoadoutFetcher(string loadoutsFolder, PackageFetcher packageFetcher)
+        
+        public static List<Loadout> GetLoadouts(string loadoutsPath)
         {
-            Loadouts = new SourceList<Loadout>();
-            LoadoutsFolder = loadoutsFolder;
-            this.packageFetcher = packageFetcher;
-            InitialiseLoadouts();
-        }
-
-        private void InitialiseLoadouts()
-        {
-            List<Loadout> convertedLoadouts = ConvertOldLoadouts();
-            string loadoutsPath = Path.Combine(Utils.AppLocation, "Loadouts.json");
-            Loadouts.Connect().AutoRefresh().Subscribe(LoadoutsChanged);
-
-            if (!File.Exists(loadoutsPath))
-            {
-                if (convertedLoadouts.Count > 0)
-                    Loadouts.AddRange(convertedLoadouts);
-                else
-                    Loadouts.Add(new Loadout());
-                return;
-            }
-
+            List<Loadout> loadouts = new();
+            loadouts.Concat(ConvertOldLoadouts(loadoutsPath));
             string loadoutsJson = File.ReadAllText(loadoutsPath);
-            List<Loadout>? loadouts = JsonSerializer.Deserialize<List<Loadout>>(loadoutsJson);
-            if (loadouts == null)
-                throw new Exception("Parsed loadouts was null");
-
-            Loadouts.AddRange(loadouts.Concat(convertedLoadouts));
-        }
-
-        private void LoadoutsChanged(IChangeSet<Loadout> changes)
-        {
-            string loadoutsPath = Path.Combine(Utils.AppLocation, "Loadouts.json");
-            string loadoutsJson = JsonSerializer.Serialize(Loadouts.Items);
-            File.WriteAllText(loadoutsPath, loadoutsJson);
+            List<Loadout>? parsedLoadouts = JsonSerializer.Deserialize<List<Loadout>>(loadoutsJson);
+            if (parsedLoadouts != null)
+                loadouts.Concat(parsedLoadouts);
+            return loadouts;
         }
 
         /// <summary>
         /// Converts old Aemulus Loadout.xml files to a List of new Loadout objects, deleting the old loadout files once done
         /// </summary>
-        private List<Loadout> ConvertOldLoadouts()
+        private static List<Loadout> ConvertOldLoadouts(string loadoutsPath)
         {
             List<Loadout> loadouts = new List<Loadout>();
 
-            if (!Directory.Exists(LoadoutsFolder))
+            if (!Directory.Exists(loadoutsPath))
                 return loadouts;
 
             // Get the loadouts for each game as they were seperated by folder
-            foreach (var gameFolder in Directory.GetDirectories(LoadoutsFolder))
+            foreach (var gameFolder in Directory.GetDirectories(loadoutsPath))
             {
                 foreach (var loadoutFile in Directory.GetFiles(gameFolder, "*.xml"))
                 {
@@ -122,14 +87,14 @@ namespace AemulusEx.Services
         /// <param name="oldPackages">The list of old <see cref="LoadoutPackage"/> generated from an old Loadout xml</param>
         /// <param name="game">The name of the game the packages are from</param>
         /// <returns></returns>
-        private List<LoadoutPackage> ConvertOldLoadoutPackages(List<OldLoadoutPackage> oldPackages, string game)
+        private static List<LoadoutPackage> ConvertOldLoadoutPackages(List<OldLoadoutPackage> oldPackages, string game)
         {
             List<LoadoutPackage> newPackages = new List<LoadoutPackage>();
 
             foreach (var oldPackage in oldPackages)
             {
                 string packageDir = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "Packages", game, oldPackage.path);
-                if (!packageFetcher.TryGetPackage(packageDir, out Package newPackage))
+                if (!PackageFetcher.TryGetPackage(packageDir, out Package newPackage))
                 {
                     // Create a dummy package with what information is available from the from the loadout package data as the package doesn't exist
                     newPackage.Id = oldPackage.id;

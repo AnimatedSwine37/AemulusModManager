@@ -9,24 +9,18 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace AemulusEx.Services
 {
-    public class PackageFetcher
+    public static class PackageFetcher
     {
-        public string PackagesFolder { get; }
 
-        public PackageFetcher(string packagesFolder)
-        {
-            PackagesFolder = packagesFolder;
-        }
-
-        public List<Package> GetPackages()
+        public static List<Package> GetPackages(string packagesFolder)
         {
             List<Package> packages = new List<Package>();
-            if (!Directory.Exists(PackagesFolder))
+            if (!Directory.Exists(packagesFolder))
                 return packages;
 
-            ConvertOldPackages();
+            ConvertOldPackages(packagesFolder);
 
-            foreach (string packageFile in Directory.GetFiles(PackagesFolder, "Package.json", SearchOption.AllDirectories))
+            foreach (string packageFile in Directory.GetFiles(packagesFolder, "Package.json", SearchOption.AllDirectories))
             {
                 if(!TryGetPackage(packageFile, out Package package))
                 {
@@ -42,9 +36,9 @@ namespace AemulusEx.Services
         /// <summary>
         /// Converts old Aemulus Package.xml files to the newer Package.json files
         /// </summary>
-        private void ConvertOldPackages()
+        private static void ConvertOldPackages(string packagesFolder)
         {
-            foreach (var packageFile in Directory.GetFiles(PackagesFolder, "Package.xml", SearchOption.AllDirectories))
+            foreach (var packageFile in Directory.GetFiles(packagesFolder, "Package.xml", SearchOption.AllDirectories))
             {
                 XmlDocument xmlDoc = new XmlDocument();
                 try
@@ -83,7 +77,7 @@ namespace AemulusEx.Services
         /// <param name="packageDir">The full path to the package's folder</param>
         /// <param name="package">The <see cref="Package"/> that is found. If no <see cref="Package"/> was found this will have default values.</param>
         /// <returns>True if the package exists, otherwise false</returns>
-        public bool TryGetPackage(string packageDir, out Package package)
+        public static bool TryGetPackage(string packageDir, out Package package)
         {
             package = new Package();
             if (!File.Exists(Path.Combine(packageDir, "Package.json")))
