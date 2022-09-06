@@ -1403,6 +1403,7 @@ namespace AemulusModManager
                         if (game == "Persona 4 Golden" && !(Directory.Exists($@"{package}\data")
                         || Directory.Exists($@"{package}\data") || Directory.Exists($@"{package}\data_e")
                         || Directory.Exists($@"{package}\data_c") || Directory.Exists($@"{package}\data_k")
+
                         || Directory.Exists($@"{package}\data00000") || Directory.Exists($@"{package}\data00001")
                         || Directory.Exists($@"{package}\data00002") || Directory.Exists($@"{package}\data00003")
                         || Directory.Exists($@"{package}\data00004") || Directory.Exists($@"{package}\data00005")
