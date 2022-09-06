@@ -7,8 +7,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\AemulusLib\AemulusLib\AemulusLib.csproj" />
-  </ItemGroup>
-
 </Project>
